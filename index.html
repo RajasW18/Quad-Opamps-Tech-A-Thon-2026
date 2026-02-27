@@ -32,8 +32,8 @@
         <div class="screw-bl"></div>
         <div class="screw-br"></div>
 
-        <h1>LINK_CTRL</h1>
-        <p class="sub">SYS/MQTT Remote Interface</p>
+        <h1>HIVEMQ_SETUP</h1>
+        <p class="sub">Cloud Broker Configuration</p>
 
         <label>Broker Hostname</label>
         <input type="text" id="broker" placeholder="xxxx.s1.eu.hivemq.cloud">
@@ -64,7 +64,7 @@
         <div class="screw-bl"></div>
         <div class="screw-br"></div>
 
-        <h1>PWR_OUT</h1>
+        <h1>VOLTAGE_SETUP</h1>
         <p class="sub">DAC Control Matrix (Max 10.56V)</p>
 
         <div class="volt-display">
@@ -93,7 +93,35 @@
             FETCH CURRENT VALUE
         </button>
     </div>
+    <!-- About Us Module -->
+    <div class="module">
+        <div class="screw-bl"></div>
+        <div class="screw-br"></div>
 
+        <h1>ABOUT_US</h1>
+        <p class="sub">Team Information</p>
+
+        <div class="device-state" style="text-align:left; padding:20px;">
+
+            <span style="color: var(--cyan-glow); font-size:1.2em;">
+                Team: Quad Opamps
+            </span>
+            <br><br>
+
+            <span style="color:#888;">Project:</span>
+            <span style="color: var(--amber-glow);">
+                Tech-A-Thon 2026
+            </span>
+            <br><br>
+
+            <span style="color:#888;">Members:</span><br>
+            &gt; Rajas Wagle<br>
+            &gt; Dhruv Warik<br>
+            &gt; Vivaan Tasker<br>
+            &gt; Soham Shah
+
+        </div>
+    </div>
 </div>
 
 <!-- App logic (loads AFTER Paho) -->
