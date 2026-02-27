@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>quad_opamps Dashboard</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Orbitron:wght@500;700;900&family=VT323&family=Wallpoet&display=swap" rel="stylesheet">
+
+    <!-- ✅ FIXED MQTT LIBRARY (Reliable Global Paho Object) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div id="loader">
+    <div class="pcb-trace-container">
+        <div class="trace-line trace-1"></div>
+        <div class="solder-pad"></div>
+        <div class="solder-blob"></div>
+    </div>
+    <div class="load-text">SOLDERING CONNECTIONS...</div>
+</div>
+
+<div id="app">
+
+    <!-- Connection Module -->
+    <div class="module" id="connModule">
+        <div class="screw-bl"></div>
+        <div class="screw-br"></div>
+
+        <h1>LINK_CTRL</h1>
+        <p class="sub">SYS/MQTT Remote Interface</p>
+
+        <label>Broker Hostname</label>
+        <input type="text" id="broker" placeholder="xxxx.s1.eu.hivemq.cloud">
+
+        <div class="flex-row">
+            <div>
+                <label>Username</label>
+                <input type="text" id="username">
+            </div>
+            <div>
+                <label>Password</label>
+                <input type="password" id="password">
+            </div>
+        </div>
+
+        <label>Device ID</label>
+        <input type="text" id="clientId" value="quad_opamps_gui">
+
+        <p class="info-tip">Browser uses Secure WebSocket (WSS Port 8884)</p>
+
+        <button id="connectBtn" onclick="toggleConnect()">INITIALIZE LINK</button>
+
+        <div id="status" class="status disconnected">[ NO SIGNAL ]</div>
+    </div>
+
+    <!-- Voltage Module -->
+    <div class="module">
+        <div class="screw-bl"></div>
+        <div class="screw-br"></div>
+
+        <h1>PWR_OUT</h1>
+        <p class="sub">DAC Control Matrix (Max 10.56V)</p>
+
+        <div class="volt-display">
+            <span class="volt-num" id="voltDisplay">0.00</span>
+            <span class="volt-unit">V</span>
+        </div>
+
+        <div class="device-state" id="deviceState">&gt; TELEMETRY PENDING...</div>
+
+        <label>Master Output Fader</label>
+        <input type="range" id="voltSlider" min="0" max="100" value="0" oninput="onSliderChange()">
+        <div class="slider-track-marks"></div>
+
+        <div class="slider-labels">
+            <span>0.00V</span>
+            <span id="pctLabel" style="color: var(--amber-glow);">0%</span>
+            <span>10.56V</span>
+        </div>
+
+        <label>Manual Value Request (V)</label>
+        <input type="number" id="voltInput" min="0" max="10.56" step="0.01" value="0.00">
+
+        <button id="applyBtn" onclick="applyVoltage()" disabled>TRANSMIT REQUEST</button>
+        <div id="applyMsg" class="status"></div>
+        <button onclick="requestVoltage()" id="refreshBtn">
+            FETCH CURRENT VALUE
+        </button>
+    </div>
+
+</div>
+
+<!-- App logic (loads AFTER Paho) -->
+<script src="app.js"></script>
+
+</body>
+</html>
