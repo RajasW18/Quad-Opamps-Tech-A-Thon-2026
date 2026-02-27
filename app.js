@@ -1,4 +1,7 @@
+// ============================
 // Boot Animation
+// ============================
+
 window.addEventListener("load", function () {
     setTimeout(() => {
         const loader = document.getElementById('loader');
@@ -18,19 +21,35 @@ window.addEventListener("load", function () {
     }, 2500);
 });
 
+
+// ============================
+// Constants
+// ============================
+
 const MAX_V = 10.56;
-const TOPIC_SET = "quad_opamps/voltage/set";
-const TOPIC_STATE = "quad_opamps/voltage/state";
+
+const TOPIC_SET     = "quad_opamps/voltage/set";
+const TOPIC_STATE   = "quad_opamps/voltage/state";
 const TOPIC_REQUEST = "quad_opamps/voltage/request";
+
+
+// ============================
+// Globals
+// ============================
 
 let client = null;
 let isConnected = false;
 let pendingPct = 0;
+let guiMode = "idle";   // IMPORTANT FIX
 
-// ---------- MQTT ----------
+
+// ============================
+// MQTT CONNECT
+// ============================
 
 function connect() {
-    const broker = document.getElementById("broker").value.trim();
+
+    const broker   = document.getElementById("broker").value.trim();
     const username = document.getElementById("username").value.trim();
     const password = document.getElementById("password").value.trim();
     const clientId = document.getElementById("clientId").value.trim() || "quad_opamps_gui";
@@ -46,18 +65,24 @@ function connect() {
     document.getElementById("connectBtn").disabled = true;
 
     try {
+
         const wsUrl = `wss://${broker}:8884/mqtt`;
         client = new Paho.MQTT.Client(wsUrl, clientId);
 
-        client.onConnectionLost = () => updateStatus(false);
+        client.onConnectionLost = function (responseObject) {
+            console.log("Connection lost:", responseObject.errorMessage);
+            updateStatus(false);
+        };
+
         client.onMessageArrived = onMessageArrived;
 
         client.connect({
             useSSL: true,
             userName: username,
             password: password,
+            timeout: 5,
             onSuccess: onConnect,
-            onFailure: (err) => {
+            onFailure: function (err) {
                 statusEl.textContent = "[ FAIL: " + err.errorMessage + " ]";
                 statusEl.style.color = "var(--red-glow)";
                 document.getElementById("connectBtn").disabled = false;
@@ -70,33 +95,56 @@ function connect() {
     }
 }
 
+
 function onConnect() {
+
     updateStatus(true);
+
     client.subscribe(TOPIC_STATE);
+
+    // Immediately request state once connected
     requestVoltage();
 }
 
+
+// ============================
+// MQTT REQUEST
+// ============================
+
 function requestVoltage() {
+
     if (!client || !isConnected) return;
+
     const msg = new Paho.MQTT.Message("get");
     msg.destinationName = TOPIC_REQUEST;
     client.send(msg);
 }
 
+
+// ============================
+// MQTT RECEIVE
+// ============================
+
 function onMessageArrived(message) {
 
     if (guiMode === "transmit") {
-        return;  // Ignore incoming state while transmitting
+        return;  // Ignore state echo while transmitting
     }
 
     guiMode = "receive";
 
     if (message.destinationName === TOPIC_STATE) {
+
         const pct = parseInt(message.payloadString);
+
+        if (isNaN(pct)) return;
+
         const volts = (pct / 100) * MAX_V;
 
         document.getElementById("deviceState").textContent =
             `> TELEMETRY: ${pct}% // ${volts.toFixed(2)}V`;
+
+        updateVoltDisplay(pct);
     }
 
     setTimeout(() => {
@@ -104,18 +152,31 @@ function onMessageArrived(message) {
     }, 200);
 }
 
+
+// ============================
+// MQTT DISCONNECT
+// ============================
+
 function disconnect() {
-    if (client) client.disconnect();
+
+    if (client && isConnected) {
+        client.disconnect();
+    }
+
     updateStatus(false);
     document.getElementById("connectBtn").disabled = false;
 }
+
 
 function toggleConnect() {
     isConnected ? disconnect() : connect();
 }
 
+
 function updateStatus(connected) {
+
     isConnected = connected;
+
     const statusEl = document.getElementById("status");
     const btn = document.getElementById("connectBtn");
     const applyBtn = document.getElementById("applyBtn");
@@ -133,36 +194,52 @@ function updateStatus(connected) {
     }
 }
 
-// ---------- Voltage UI ----------
+
+// ============================
+// Voltage UI
+// ============================
 
 function onSliderChange() {
+
     const pct = parseInt(document.getElementById("voltSlider").value);
+
     pendingPct = pct;
+
     updateVoltDisplay(pct);
 }
 
+
 function updateVoltDisplay(pct) {
+
     const volts = (pct / 100) * MAX_V;
+
     document.getElementById("voltDisplay").textContent = volts.toFixed(2);
     document.getElementById("pctLabel").textContent = pct + "%";
     document.getElementById("voltInput").value = volts.toFixed(2);
 }
 
-function applyVoltage() {
-    if (!client || !isConnected) return;
 
+function applyVoltage() {
+
+    if (!client || !isConnected) return;
     if (guiMode === "receive") return;
 
     guiMode = "transmit";
 
     const msg = new Paho.MQTT.Message(String(pendingPct));
     msg.destinationName = TOPIC_SET;
+
     client.send(msg);
 
     setTimeout(() => {
         guiMode = "idle";
-    }, 500);  // small lock window
+    }, 500);
 }
+
+
+// ============================
+// Init
+// ============================
 
 document.addEventListener("DOMContentLoaded", () => {
     updateVoltDisplay(0);
