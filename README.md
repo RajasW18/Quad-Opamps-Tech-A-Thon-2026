@@ -57,6 +57,38 @@ voltage = (percentage / 100) × 10.56
 
 The device should publish its response to `quad_opamps/voltage/state` after receiving a request. The dashboard subscribes to this state topic immediately after connecting.
 
+### Connection and telemetry flow
+
+```mermaid
+sequenceDiagram
+    actor Operator
+    participant Dashboard
+    participant Broker as HiveMQ Broker
+    participant Device as Quad Opamps Device
+
+    Operator->>Dashboard: Enter broker credentials
+    Dashboard->>Broker: Secure WebSocket connection (WSS :8884)
+    Dashboard->>Broker: Subscribe to voltage/state
+    Dashboard->>Device: Publish "get" to voltage/request
+    Device->>Broker: Publish percentage to voltage/state
+    Broker-->>Dashboard: Current output percentage
+    Dashboard-->>Operator: Display percentage and voltage
+```
+
+### Voltage control flow
+
+```mermaid
+flowchart LR
+    A[Operator selects voltage] --> B[Convert voltage to 0-100%]
+    B --> C[Publish percentage]
+    C --> D[quad_opamps/voltage/set]
+    D --> E[MQTT broker]
+    E --> F[Quad Opamps device]
+    F --> G[Publish device state]
+    G --> H[quad_opamps/voltage/state]
+    H --> I[Dashboard telemetry display]
+```
+
 ## Configuration
 
 Connection settings are entered in the **HIVEMQ SETUP** panel:
